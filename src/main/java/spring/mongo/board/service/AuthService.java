@@ -21,7 +21,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
 
 
-    public boolean login(LoginForm form, String sessionId, HttpServletResponse response) {
+    public boolean login(LoginForm form, HttpServletResponse response) {
         Optional<Member> member = memberRepository.findMemberByUsername(form.getId());
         if (member.isEmpty()) return false;
 
@@ -40,5 +40,9 @@ public class AuthService {
         }
         
         return matches;
+    }
+
+    public void logout(String sessionId) {
+        sessionRepository.deleteById(sessionId);
     }
 }
