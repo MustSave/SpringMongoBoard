@@ -16,12 +16,11 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/auth")
-    @ResponseBody
-    public ResponseEntity<ResponseMessage> login(LoginForm form, @CookieValue(name = "sessionId") String sessionId, HttpServletResponse response) {
+    public ResponseEntity<ResponseMessage> login(LoginForm form, HttpServletResponse response) {
         ResponseMessage responseMessage;
         HttpStatus statusCode;
 
-        boolean login = authService.login(form, sessionId, response);
+        boolean login = authService.login(form, response);
         if (login) {
             responseMessage = new ResponseMessage("로그인 성공");
             statusCode = HttpStatus.OK;
@@ -31,5 +30,14 @@ public class AuthController {
         }
 
         return new ResponseEntity<>(responseMessage, null, statusCode);
+    }
+
+    @DeleteMapping("/auth")
+    public ResponseEntity<ResponseMessage> logout(@CookieValue(name = "sessionId", defaultValue = "") String sessionId) {
+        if (sessionId.isEmpty()) {
+            return new ResponseEntity<>(new ResponseMessage("OK"), null, HttpStatus.OK);
+        }
+        authService.logout(sessionId);
+        return new ResponseEntity<>(new ResponseMessage("OK"), null, HttpStatus.OK);
     }
 }
