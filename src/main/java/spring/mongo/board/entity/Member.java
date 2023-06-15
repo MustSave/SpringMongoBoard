@@ -1,5 +1,6 @@
 package spring.mongo.board.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,10 +12,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Member {
-    @Id
+    @Id @JsonIgnore
     private String id;
     @Indexed(unique = true)
     private String username;
+    @JsonIgnore
     private String pwd;
 
     public Member(String username, String pwd) {
