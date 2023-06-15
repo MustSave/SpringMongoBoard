@@ -8,6 +8,7 @@ import spring.mongo.board.entity.Post;
 import spring.mongo.board.repository.MemberRepository;
 import spring.mongo.board.repository.PostRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -32,5 +33,22 @@ public class PostService {
 
     public Optional<Post> findById(String postId) {
         return postRepository.findById(postId);
+    }
+
+    public boolean saveComment(List<Integer> replies, String comment, String memberId, String postId) {
+        Optional<Post> post = postRepository.findById(postId);
+        if (post.isEmpty()) return false;
+
+        List<Post.Comment> targetList = post.get().getComments();
+        if (replies != null && !replies.isEmpty()) {
+            for (Integer replyIdx : replies) {
+                if (targetList.size() <= replyIdx) return false;
+                targetList = targetList.get(replyIdx).getReplies();
+            }
+        }
+
+        targetList.add(new Post.Comment(new Member(memberId), comment));
+        postRepository.save(post.get());
+        return true;
     }
 }

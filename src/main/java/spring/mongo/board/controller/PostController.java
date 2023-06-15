@@ -49,4 +49,17 @@ public class PostController {
         if (post.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseMessage("해당 게시글 ID가 존재하지 않습니다."));
         return ResponseEntity.status(200).body(post.get());
     }
+
+    @PostMapping("/posts/{id}")
+    @ResponseBody
+    public ResponseEntity<ResponseMessage> createComment(
+                                        @RequestParam(name = "replies", required = false) List<Integer> replies,
+                                        @RequestParam("comment") String comment,
+                                        @RequestAttribute("memberId") String memberId,
+                                        @PathVariable("id") String postId) {
+        boolean success = postService.saveComment(replies, comment, memberId, postId);
+        return ResponseEntity
+                .status(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+                .body(new ResponseMessage(success ? "OK" : "Invalid Parameter"));
+    }
 }

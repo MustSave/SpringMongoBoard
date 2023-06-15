@@ -28,9 +28,17 @@ public class Post {
 
     @Data
     public static class Comment {
+        @Id
+        private String id;
         @DBRef
         private Member writer;
         private String content;
+
         private List<Comment> replies = new ArrayList<>();
+
+        public Comment(Member writer, String content) {
+            this.writer = writer;
+            this.content = content;
+        }
     }
 }

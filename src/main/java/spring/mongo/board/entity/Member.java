@@ -24,6 +24,10 @@ public class Member {
         this.pwd = pwd;
     }
 
+    public Member(String id) {
+        this.id=id;
+    }
+
     public void setUsername(String username) {
         this.username = username;
     }
