@@ -12,6 +12,7 @@ import spring.mongo.board.service.PostService;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -37,7 +38,15 @@ public class PostController {
 
     @GetMapping("/posts")
     @ResponseBody
-    public List<Post> getPost() {
+    public List<Post> getAllPost() {
         return postService.findAll();
+    }
+
+    @GetMapping("/posts/{id}")
+    @ResponseBody
+    public ResponseEntity getPostById(@PathVariable("id") String postId) {
+        Optional<Post> post = postService.findById(postId);
+        if (post.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseMessage("해당 게시글 ID가 존재하지 않습니다."));
+        return ResponseEntity.status(200).body(post.get());
     }
 }
