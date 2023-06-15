@@ -8,6 +8,7 @@ import spring.mongo.board.entity.Post;
 import spring.mongo.board.repository.MemberRepository;
 import spring.mongo.board.repository.PostRepository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -56,6 +57,27 @@ public class PostService {
         if (post.isEmpty()) return false;
 
         postRepository.deleteById(postId);
+        return true;
+    }
+
+    public boolean deleteComment(String postId, int[] replyIds, String memberId) {
+        Optional<Post> post = postRepository.findById(postId);
+        if (post.isEmpty()) return false;
+
+        Post.Comment comment = null;
+        List<Post.Comment> targetList = post.get().getComments();
+
+        for (int replyId : replyIds) {
+            if (replyId < 0 || targetList.size() <= replyId) return false;
+            comment = targetList.get(replyId);
+            targetList = targetList.get(replyId).getReplies();
+        }
+
+        // 댓글 작성자인지 확인
+        if (comment == null || comment.getWriter() == null || !comment.getWriter().getId().equals(memberId)) return false;
+
+        comment.delete();
+        postRepository.save(post.get());
         return true;
     }
 }

@@ -10,6 +10,7 @@ import spring.mongo.board.dto.ResponseMessage;
 import spring.mongo.board.entity.Post;
 import spring.mongo.board.service.PostService;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -70,5 +71,23 @@ public class PostController {
         return ResponseEntity
                 .status(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
                 .body(new ResponseMessage(success ? "OK" : "Invalid Parameter"));
+    }
+
+    @DeleteMapping("/posts/{id}/{replies}")
+    public ResponseEntity<ResponseMessage> deleteComment(@PathVariable("id") String postId,
+                                                         @PathVariable("replies") String replies,
+                                                         @RequestAttribute("memberId") String memberId) {
+        int[] replyIds;
+        try {
+            replyIds = Arrays.stream(replies.split(",")).mapToInt(Integer::parseInt).toArray();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Not an integer"));
+        }
+
+        if (replyIds.length == 0 || !postService.deleteComment(postId, replyIds, memberId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Invalid Parm"));
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("Deleted"));
     }
 }

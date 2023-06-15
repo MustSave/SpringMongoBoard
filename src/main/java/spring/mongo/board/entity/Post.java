@@ -28,8 +28,8 @@ public class Post {
 
     @Data
     public static class Comment {
-        @Id
-        private String id;
+//        @Id
+//        private String id;
         @DBRef
         private Member writer;
         private String content;
@@ -39,6 +39,11 @@ public class Post {
         public Comment(Member writer, String content) {
             this.writer = writer;
             this.content = content;
+        }
+
+        public void delete() {
+            this.writer = null;
+            this.content = "삭제된 댓글입니다.";
         }
     }
 }
