@@ -45,6 +45,6 @@ public class AuthService {
     }
 
     public void logout(String sessionId) {
-        sessionRepository.deleteById(sessionId);
+        sessionRepository.deleteBySessionId(sessionId);
     }
 }
