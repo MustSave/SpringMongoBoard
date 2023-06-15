@@ -13,6 +13,7 @@ import spring.mongo.board.repository.SessionRepository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,9 @@ public class AuthService {
 
         // 로그인 성공 시 세션 쿠키 생성 및 전달
         if (matches) {
-            Session session = sessionRepository.save(new Session(member.get().getId(), LocalDateTime.now()));
-            Cookie cookie = new Cookie("sessionId", session.getId());
+            String sessionId = UUID.randomUUID().toString();
+            Session session = sessionRepository.save(new Session(sessionId, member.get().getId(), LocalDateTime.now()));
+            Cookie cookie = new Cookie("sessionId", sessionId);
             cookie.setPath("/");
             cookie.setHttpOnly(true);
             cookie.setSecure(true);
@@ -43,6 +45,6 @@ public class AuthService {
     }
 
     public void logout(String sessionId) {
-        sessionRepository.deleteById(sessionId);
+        sessionRepository.deleteBySessionId(sessionId);
     }
 }

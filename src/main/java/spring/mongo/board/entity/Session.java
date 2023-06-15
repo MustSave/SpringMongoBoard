@@ -15,13 +15,16 @@ import java.time.LocalDateTime;
 public class Session {
     @Id
     private String id;
-    private String userId;
+    @Indexed
+    private String sessionId;
+    private String memberId;
+    @Indexed(expireAfterSeconds = 1800) // TTL index for 30 min
+    private LocalDateTime creationTime;
 
-    public Session(String userId, LocalDateTime creationTime) {
-        this.userId = userId;
+    public Session(String sessionId, String memberId, LocalDateTime creationTime) {
+        this.sessionId = sessionId;
+        this.memberId = memberId;
         this.creationTime = creationTime;
     }
 
-    @Indexed(expireAfterSeconds = 1800) // TTL index for 30 min
-    private LocalDateTime creationTime;
 }
