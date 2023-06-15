@@ -20,6 +20,12 @@ import java.util.Optional;
 public class PostController {
     private final PostService postService;
 
+    @GetMapping("/posts")
+    @ResponseBody
+    public List<Post> getAllPost() {
+        return postService.findAll();
+    }
+
     @PostMapping("/posts")
     public ResponseEntity<ResponseMessage> createPost(PostForm form, @RequestAttribute("memberId") String memberId) {
         HttpStatus statusCode;
@@ -37,12 +43,6 @@ public class PostController {
         return ResponseEntity.status(statusCode).body(new ResponseMessage(responseBody));
     }
 
-    @GetMapping("/posts")
-    @ResponseBody
-    public List<Post> getAllPost() {
-        return postService.findAll();
-    }
-
     @GetMapping("/posts/{id}")
     @ResponseBody
     public ResponseEntity getPostById(@PathVariable("id") String postId) {
@@ -51,9 +51,32 @@ public class PostController {
         return ResponseEntity.status(200).body(post.get());
     }
 
+    @PatchMapping("/posts/{id}")
+    public ResponseEntity<ResponseMessage> updatePost(@PathVariable("id") String postId,
+                                                      @RequestAttribute("memberId") String memberId,
+                                                      PostForm form) {
+        HttpStatus statusCode;
+        String responseBody;
+
+        boolean updated = postService.update(postId, memberId, form);
+
+        if (updated) {
+            statusCode = HttpStatus.OK;
+            responseBody = "Updated";
+        } else {
+            statusCode = HttpStatus.UNAUTHORIZED;
+            responseBody = "no permission or invalid content";
+        }
+
+        return ResponseEntity
+                .status(statusCode)
+                .body(new ResponseMessage(responseBody));
+    }
+
     @DeleteMapping("/posts/{id}")
     @ResponseBody
-    public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId, @RequestAttribute("memberId") String memberId) {
+    public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId,
+                                                      @RequestAttribute("memberId") String memberId) {
         boolean deleted = postService.deleteById(postId, memberId);
         return ResponseEntity
                 .status(deleted ? HttpStatus.OK : HttpStatus.UNAUTHORIZED)
@@ -73,21 +96,43 @@ public class PostController {
                 .body(new ResponseMessage(success ? "OK" : "Invalid Parameter"));
     }
 
-    @DeleteMapping("/posts/{id}/{replies}")
-    public ResponseEntity<ResponseMessage> deleteComment(@PathVariable("id") String postId,
-                                                         @PathVariable("replies") String replies,
-                                                         @RequestAttribute("memberId") String memberId) {
-        int[] replyIds;
+    @PatchMapping("/posts/{id}/{commentIdxStr}")
+    public ResponseEntity<ResponseMessage> updateComment(@PathVariable("id") String postId,
+                                                         @PathVariable("commentIdxStr") String commentIdxStr,
+                                                         @RequestAttribute("memberId") String memberId,
+                                                         @RequestParam("comment") String comment) {
+        int[] commentIndexes;
         try {
-            replyIds = Arrays.stream(replies.split(",")).mapToInt(Integer::parseInt).toArray();
+            commentIndexes = parseStringAndConvertToInt(commentIdxStr, ",");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Not an integer"));
         }
 
-        if (replyIds.length == 0 || !postService.deleteComment(postId, replyIds, memberId)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Invalid Parm"));
+        int statusCode = postService.updateComment(postId, commentIndexes, memberId, comment);
+        return ResponseEntity.status(statusCode).body(new ResponseMessage(statusCode==200?"Updated":"Error"));
+    }
+
+    @DeleteMapping("/posts/{id}/{commentIdxStr}")
+    public ResponseEntity<ResponseMessage> deleteComment(@PathVariable("id") String postId,
+                                                         @PathVariable("commentIdxStr") String commentIdxStr,
+                                                         @RequestAttribute("memberId") String memberId) {
+        int[] commentIndexes;
+        int statusCode = 400;
+
+        try {
+            commentIndexes = parseStringAndConvertToInt(commentIdxStr, ",");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Not an integer"));
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("Deleted"));
+        if (commentIndexes.length == 0 || (statusCode = postService.deleteComment(postId, commentIndexes, memberId)) >= 300) {
+            return ResponseEntity.status(statusCode).body(new ResponseMessage("Invalid Parm"));
+        }
+
+        return ResponseEntity.status(statusCode).body(new ResponseMessage("Deleted"));
+    }
+
+    private int[] parseStringAndConvertToInt(String text, String parseRegex) {
+        return Arrays.stream(text.split(parseRegex)).mapToInt(Integer::parseInt).toArray();
     }
 }
