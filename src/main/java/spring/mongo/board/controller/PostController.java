@@ -50,6 +50,15 @@ public class PostController {
         return ResponseEntity.status(200).body(post.get());
     }
 
+    @DeleteMapping("/posts/{id}")
+    @ResponseBody
+    public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId, @RequestAttribute("memberId") String memberId) {
+        boolean deleted = postService.deleteById(postId, memberId);
+        return ResponseEntity
+                .status(deleted ? HttpStatus.OK : HttpStatus.UNAUTHORIZED)
+                .body(new ResponseMessage(deleted ? "OK" : "권한이 없습니다."));
+    }
+
     @PostMapping("/posts/{id}")
     @ResponseBody
     public ResponseEntity<ResponseMessage> createComment(
