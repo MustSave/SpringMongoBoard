@@ -39,7 +39,7 @@ public class AuthConfig implements WebMvcConfigurer {
                         Optional<Session> session = sessionRepository.findBySessionId(cookie.getValue());
                         if (session.isEmpty()) break;
 
-                        request.setAttribute("userId", session.get().getUserId());
+                        request.setAttribute("memberId", session.get().getMemberId());
                         return true;
                     }
                 }
