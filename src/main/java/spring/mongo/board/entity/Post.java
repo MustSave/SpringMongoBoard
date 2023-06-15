@@ -26,6 +26,11 @@ public class Post {
         this.content = content;
     }
 
+    public void update(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
+
     @Data
     public static class Comment {
 //        @Id

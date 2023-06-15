@@ -80,4 +80,13 @@ public class PostService {
         postRepository.save(post.get());
         return true;
     }
+
+    public boolean update(String postId, String memberId, PostForm form) {
+        Optional<Post> post = postRepository.findPostByIdAndWriterId(postId, memberId);
+        if (post.isEmpty()) return false;
+
+        post.get().update(form.getTitle(), form.getContent());
+        postRepository.save(post.get());
+        return true;
+    }
 }

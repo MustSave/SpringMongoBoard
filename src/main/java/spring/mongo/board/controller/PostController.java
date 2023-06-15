@@ -20,6 +20,12 @@ import java.util.Optional;
 public class PostController {
     private final PostService postService;
 
+    @GetMapping("/posts")
+    @ResponseBody
+    public List<Post> getAllPost() {
+        return postService.findAll();
+    }
+
     @PostMapping("/posts")
     public ResponseEntity<ResponseMessage> createPost(PostForm form, @RequestAttribute("memberId") String memberId) {
         HttpStatus statusCode;
@@ -37,12 +43,6 @@ public class PostController {
         return ResponseEntity.status(statusCode).body(new ResponseMessage(responseBody));
     }
 
-    @GetMapping("/posts")
-    @ResponseBody
-    public List<Post> getAllPost() {
-        return postService.findAll();
-    }
-
     @GetMapping("/posts/{id}")
     @ResponseBody
     public ResponseEntity getPostById(@PathVariable("id") String postId) {
@@ -51,9 +51,32 @@ public class PostController {
         return ResponseEntity.status(200).body(post.get());
     }
 
+    @PatchMapping("/posts/{id}")
+    public ResponseEntity<ResponseMessage> updatePost(@PathVariable("id") String postId,
+                                                      @RequestAttribute("memberId") String memberId,
+                                                      PostForm form) {
+        HttpStatus statusCode;
+        String responseBody;
+
+        boolean updated = postService.update(postId, memberId, form);
+
+        if (updated) {
+            statusCode = HttpStatus.OK;
+            responseBody = "Updated";
+        } else {
+            statusCode = HttpStatus.UNAUTHORIZED;
+            responseBody = "no permission or invalid content";
+        }
+
+        return ResponseEntity
+                .status(statusCode)
+                .body(new ResponseMessage(responseBody));
+    }
+
     @DeleteMapping("/posts/{id}")
     @ResponseBody
-    public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId, @RequestAttribute("memberId") String memberId) {
+    public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId,
+                                                      @RequestAttribute("memberId") String memberId) {
         boolean deleted = postService.deleteById(postId, memberId);
         return ResponseEntity
                 .status(deleted ? HttpStatus.OK : HttpStatus.UNAUTHORIZED)
