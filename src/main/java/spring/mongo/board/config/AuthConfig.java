@@ -40,6 +40,7 @@ public class AuthConfig implements WebMvcConfigurer {
                         if (session.isEmpty()) break;
 
                         request.setAttribute("memberId", session.get().getMemberId());
+
                         return true;
                     }
                 }

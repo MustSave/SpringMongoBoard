@@ -22,7 +22,8 @@ public class MemberController {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         Member member = new Member(
                 signupForm.getUsername(),
-                encoder.encode(signupForm.getPwd())
+                encoder.encode(signupForm.getPwd()),
+                signupForm.getNickname()
         );
         Member joinedMember = memberService.join(member);
 

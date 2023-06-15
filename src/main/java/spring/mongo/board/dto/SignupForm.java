@@ -8,4 +8,5 @@ import lombok.Setter;
 public class SignupForm {
     private String username;
     private String pwd;
+    private String nickname;
 }
