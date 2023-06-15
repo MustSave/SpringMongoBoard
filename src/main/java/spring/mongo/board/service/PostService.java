@@ -1,6 +1,7 @@
 package spring.mongo.board.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import spring.mongo.board.dto.PostForm;
 import spring.mongo.board.entity.Member;
@@ -8,7 +9,6 @@ import spring.mongo.board.entity.Post;
 import spring.mongo.board.repository.MemberRepository;
 import spring.mongo.board.repository.PostRepository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -52,6 +52,15 @@ public class PostService {
         return true;
     }
 
+    public boolean update(String postId, String memberId, PostForm form) {
+        Optional<Post> post = postRepository.findPostByIdAndWriterId(postId, memberId);
+        if (post.isEmpty()) return false;
+
+        post.get().update(form.getTitle(), form.getContent());
+        postRepository.save(post.get());
+        return true;
+    }
+
     public boolean deleteById(String postId, String memberId) {
         Optional<Post> post = postRepository.findPostByIdAndWriterId(postId, memberId);
         if (post.isEmpty()) return false;
@@ -60,33 +69,47 @@ public class PostService {
         return true;
     }
 
-    public boolean deleteComment(String postId, int[] replyIds, String memberId) {
+    public int deleteComment(String postId, int[] commentIndexes, String memberId) {
         Optional<Post> post = postRepository.findById(postId);
-        if (post.isEmpty()) return false;
+        if (post.isEmpty()) return HttpStatus.BAD_REQUEST.value();
 
         Post.Comment comment = null;
         List<Post.Comment> targetList = post.get().getComments();
 
-        for (int replyId : replyIds) {
-            if (replyId < 0 || targetList.size() <= replyId) return false;
-            comment = targetList.get(replyId);
-            targetList = targetList.get(replyId).getReplies();
+        for (int commentIndex : commentIndexes) {
+            if (commentIndex < 0 || targetList.size() <= commentIndex) return HttpStatus.BAD_REQUEST.value();
+
+            comment = targetList.get(commentIndex);
+            targetList = targetList.get(commentIndex).getReplies();
         }
 
         // 댓글 작성자인지 확인
-        if (comment == null || comment.getWriter() == null || !comment.getWriter().getId().equals(memberId)) return false;
+        if ((comment == null) || (comment.getWriter() == null) || !comment.getWriter().getId().equals(memberId)) return HttpStatus.UNAUTHORIZED.value();
 
         comment.delete();
         postRepository.save(post.get());
-        return true;
+        return 200;
     }
 
-    public boolean update(String postId, String memberId, PostForm form) {
-        Optional<Post> post = postRepository.findPostByIdAndWriterId(postId, memberId);
-        if (post.isEmpty()) return false;
+    public int updateComment(String postId, int[] commentIndexes, String memberId, String content) {
+        Optional<Post> post = postRepository.findById(postId);
+        if (post.isEmpty()) return HttpStatus.BAD_REQUEST.value();
 
-        post.get().update(form.getTitle(), form.getContent());
+        Post.Comment comment = null;
+        List<Post.Comment> targetList = post.get().getComments();
+
+        for (int commentIndex : commentIndexes) {
+            if (commentIndex < 0 || targetList.size() <= commentIndex) return HttpStatus.BAD_REQUEST.value();
+
+            comment = targetList.get(commentIndex);
+            targetList = targetList.get(commentIndex).getReplies();
+        }
+
+        // 댓글 작성자인지 확인
+        if ((comment == null) || (comment.getWriter() == null) || !comment.getWriter().getId().equals(memberId)) return HttpStatus.UNAUTHORIZED.value();
+
+        comment.update(content);
         postRepository.save(post.get());
-        return true;
+        return 200;
     }
 }

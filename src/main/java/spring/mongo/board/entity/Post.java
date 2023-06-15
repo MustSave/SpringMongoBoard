@@ -33,12 +33,9 @@ public class Post {
 
     @Data
     public static class Comment {
-//        @Id
-//        private String id;
         @DBRef
         private Member writer;
         private String content;
-
         private List<Comment> replies = new ArrayList<>();
 
         public Comment(Member writer, String content) {
@@ -49,6 +46,10 @@ public class Post {
         public void delete() {
             this.writer = null;
             this.content = "삭제된 댓글입니다.";
+        }
+
+        public void update(String content) {
+            this.content = content;
         }
     }
 }
