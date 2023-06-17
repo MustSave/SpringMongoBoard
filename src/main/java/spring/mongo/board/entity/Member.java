@@ -14,10 +14,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Member {
     @Id @JsonIgnore
     private String id;
+
+    // 회원 ID
     @Indexed(unique = true) @JsonIgnore
     private String username;
     @JsonIgnore
     private String pwd;
+
+    // 회원 닉네임
+    @Indexed
     private String nickname;
 
     public Member(String username, String pwd, String nickname) {
