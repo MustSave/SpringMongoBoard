@@ -14,25 +14,24 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Member {
     @Id @JsonIgnore
     private String id;
-    @Indexed(unique = true)
+
+    // 회원 ID
+    @Indexed(unique = true) @JsonIgnore
     private String username;
     @JsonIgnore
     private String pwd;
 
-    public Member(String username, String pwd) {
+    // 회원 닉네임
+    @Indexed
+    private String nickname;
+
+    public Member(String username, String pwd, String nickname) {
         this.username = username;
         this.pwd = pwd;
+        this.nickname = nickname;
     }
 
     public Member(String id) {
         this.id=id;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPwd(String pwd) {
-        this.pwd = pwd;
     }
 }

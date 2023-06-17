@@ -4,8 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import spring.mongo.board.dto.PostForm;
+import spring.mongo.board.dto.PostSearchDTO;
 import spring.mongo.board.dto.ResponseMessage;
 import spring.mongo.board.entity.Post;
 import spring.mongo.board.service.PostService;
@@ -22,8 +26,15 @@ public class PostController {
 
     @GetMapping("/posts")
     @ResponseBody
-    public List<Post> getAllPost() {
-        return postService.findAll();
+    public ResponseEntity getAllPost(@ModelAttribute @Validated PostSearchDTO postSearchDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            for (ObjectError allError : bindingResult.getAllErrors()) {
+                System.out.println("allError = " + allError);
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Invalid parameter"));
+        }
+        return ResponseEntity.status(200).body(postService.findAllWithQuery(postSearchDTO));
     }
 
     @PostMapping("/posts")

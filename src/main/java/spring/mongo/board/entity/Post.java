@@ -1,10 +1,14 @@
 package spring.mongo.board.entity;
 
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,38 +22,30 @@ public class Post {
     private Member writer;
     private String title;
     private String content;
-    private List<Comment> comments = new ArrayList<>();
+    @DBRef
+    private PostComment comments;
+    private LocalDateTime createdAt;
+    private LocalDateTime modifiedAt;
 
     public Post(Member writer, String title, String content) {
         this.writer = writer;
         this.title = title;
         this.content = content;
+        this.createdAt = LocalDateTime.now();
+        this.modifiedAt = createdAt;
     }
 
     public void update(String title, String content) {
         this.title = title;
         this.content = content;
+        this.modifiedAt = LocalDateTime.now();
     }
 
-    @Data
-    public static class Comment {
-        @DBRef
-        private Member writer;
-        private String content;
-        private List<Comment> replies = new ArrayList<>();
+    public PostComment getComments() {
+        return this.comments;
+    }
 
-        public Comment(Member writer, String content) {
-            this.writer = writer;
-            this.content = content;
-        }
-
-        public void delete() {
-            this.writer = null;
-            this.content = "삭제된 댓글입니다.";
-        }
-
-        public void update(String content) {
-            this.content = content;
-        }
+    public void setComments(PostComment comments) {
+        this.comments = comments;
     }
 }
