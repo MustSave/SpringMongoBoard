@@ -4,3 +4,11 @@ spring:
       host: localhost
       port: 27017
       auto-index-creation: true
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
