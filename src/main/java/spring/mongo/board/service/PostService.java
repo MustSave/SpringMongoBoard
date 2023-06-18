@@ -26,11 +26,8 @@ public class PostService {
     private final MemberRepository memberRepository;
     private final CommentRepository commentRepository;
 
-    public void save(PostForm form, String userId) {
-        Optional<Member> member = memberRepository.findById(userId);
-        if (member.isEmpty()) throw new NoSuchElementException();
-
-        Post post = new Post(member.get(), form.getTitle(), form.getContent());
+    public void save(PostForm form, Member member) {
+        Post post = new Post(member, form.getTitle(), form.getContent());
         postRepository.save(post);
     }
 
@@ -42,7 +39,7 @@ public class PostService {
         return postRepository.findById(postId);
     }
 
-    public boolean saveComment(List<Integer> replies, String comment, String memberId, String postId) {
+    public boolean saveComment(List<Integer> replies, String comment, Member member, String postId) {
         Optional<Post> post = postRepository.findById(postId);
         if (post.isEmpty()) return false;
 
@@ -54,7 +51,7 @@ public class PostService {
             }
         }
 
-        targetList.add(new Comment(new Member(memberId), comment));
+        targetList.add(new Comment(member, comment));
         commentRepository.save(post.get().getComments());
         return true;
     }

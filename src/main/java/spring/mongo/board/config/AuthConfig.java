@@ -10,6 +10,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import spring.mongo.board.dto.ResponseMessage;
+import spring.mongo.board.entity.Member;
 import spring.mongo.board.entity.Session;
 import spring.mongo.board.repository.SessionRepository;
 
@@ -36,11 +37,10 @@ public class AuthConfig implements WebMvcConfigurer {
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
                     if (cookie.getName().equals("sessionId")) {
-                        Optional<Session> session = sessionRepository.findBySessionId(cookie.getValue());
-                        if (session.isEmpty()) break;
+                        Optional<Member> member = sessionRepository.findMemberBySessionId(cookie.getValue());
+                        if (member.isEmpty()) break;
 
-                        request.setAttribute("memberId", session.get().getMemberId());
-
+                        request.setAttribute("member", member.get());
                         return true;
                     }
                 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import spring.mongo.board.dto.PostForm;
 import spring.mongo.board.dto.PostSearchDTO;
 import spring.mongo.board.dto.ResponseMessage;
+import spring.mongo.board.entity.Member;
 import spring.mongo.board.entity.Post;
 import spring.mongo.board.service.PostService;
 
@@ -38,17 +39,17 @@ public class PostController {
     }
 
     @PostMapping("/posts")
-    public ResponseEntity<ResponseMessage> createPost(PostForm form, @RequestAttribute("memberId") String memberId) {
+    public ResponseEntity<ResponseMessage> createPost(PostForm form, @RequestAttribute("member") Member member) {
         HttpStatus statusCode;
         String responseBody;
 
         try {
-            postService.save(form, memberId);
+            postService.save(form, member);
             statusCode = HttpStatus.OK;
             responseBody = "OK";
-        } catch (NoSuchElementException e) {
-            statusCode = HttpStatus.UNAUTHORIZED;
-            responseBody = "사용자 정보를 찾을 수 없음";
+        } catch (Exception e) {
+            statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            responseBody = "게시글 등록 실패";
         }
 
         return ResponseEntity.status(statusCode).body(new ResponseMessage(responseBody));
@@ -64,12 +65,12 @@ public class PostController {
 
     @PatchMapping("/posts/{id}")
     public ResponseEntity<ResponseMessage> updatePost(@PathVariable("id") String postId,
-                                                      @RequestAttribute("memberId") String memberId,
+                                                      @RequestAttribute("member") Member member,
                                                       PostForm form) {
         HttpStatus statusCode;
         String responseBody;
 
-        boolean updated = postService.update(postId, memberId, form);
+        boolean updated = postService.update(postId, member.getId(), form);
 
         if (updated) {
             statusCode = HttpStatus.OK;
@@ -87,8 +88,8 @@ public class PostController {
     @DeleteMapping("/posts/{id}")
     @ResponseBody
     public ResponseEntity<ResponseMessage> deletePost(@PathVariable("id") String postId,
-                                                      @RequestAttribute("memberId") String memberId) {
-        boolean deleted = postService.deleteById(postId, memberId);
+                                                      @RequestAttribute("member") Member member) {
+        boolean deleted = postService.deleteById(postId, member.getId());
         return ResponseEntity
                 .status(deleted ? HttpStatus.OK : HttpStatus.UNAUTHORIZED)
                 .body(new ResponseMessage(deleted ? "OK" : "권한이 없습니다."));
@@ -99,9 +100,9 @@ public class PostController {
     public ResponseEntity<ResponseMessage> createComment(
                                         @RequestParam(name = "replies", required = false) List<Integer> replies,
                                         @RequestParam("comment") String comment,
-                                        @RequestAttribute("memberId") String memberId,
+                                        @RequestAttribute("member") Member member,
                                         @PathVariable("id") String postId) {
-        boolean success = postService.saveComment(replies, comment, memberId, postId);
+        boolean success = postService.saveComment(replies, comment, member, postId);
         return ResponseEntity
                 .status(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
                 .body(new ResponseMessage(success ? "OK" : "Invalid Parameter"));
@@ -110,7 +111,7 @@ public class PostController {
     @PatchMapping("/posts/{id}/{commentIdxStr}")
     public ResponseEntity<ResponseMessage> updateComment(@PathVariable("id") String postId,
                                                          @PathVariable("commentIdxStr") String commentIdxStr,
-                                                         @RequestAttribute("memberId") String memberId,
+                                                         @RequestAttribute("member") Member member,
                                                          @RequestParam("comment") String comment) {
         int[] commentIndexes;
         try {
@@ -119,14 +120,14 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Not an integer"));
         }
 
-        int statusCode = postService.updateComment(postId, commentIndexes, memberId, comment);
+        int statusCode = postService.updateComment(postId, commentIndexes, member.getId(), comment);
         return ResponseEntity.status(statusCode).body(new ResponseMessage(statusCode==200?"Updated":"Error"));
     }
 
     @DeleteMapping("/posts/{id}/{commentIdxStr}")
     public ResponseEntity<ResponseMessage> deleteComment(@PathVariable("id") String postId,
                                                          @PathVariable("commentIdxStr") String commentIdxStr,
-                                                         @RequestAttribute("memberId") String memberId) {
+                                                         @RequestAttribute("member") Member member) {
         int[] commentIndexes;
         int statusCode = 400;
 
@@ -136,7 +137,7 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Not an integer"));
         }
 
-        if (commentIndexes.length == 0 || (statusCode = postService.deleteComment(postId, commentIndexes, memberId)) >= 300) {
+        if (commentIndexes.length == 0 || (statusCode = postService.deleteComment(postId, commentIndexes, member.getId())) >= 300) {
             return ResponseEntity.status(statusCode).body(new ResponseMessage("Invalid Parm"));
         }
 
