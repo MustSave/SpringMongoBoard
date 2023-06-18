@@ -29,13 +29,14 @@ public class PostController {
     @ResponseBody
     public ResponseEntity getAllPost(@ModelAttribute @Validated PostSearchDTO postSearchDTO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            for (ObjectError allError : bindingResult.getAllErrors()) {
-                System.out.println("allError = " + allError);
-            }
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Invalid parameter"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(bindingResult.getAllErrors().get(0).getDefaultMessage()));
         }
-        return ResponseEntity.status(200).body(postService.findAllWithQuery(postSearchDTO));
+        try {
+            postSearchDTO.validate();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(e.getMessage()));
+        }
+        return ResponseEntity.status(200).body(postService.findAllWithQuery(postSearchDTO, 10l));
     }
 
     @PostMapping("/posts")

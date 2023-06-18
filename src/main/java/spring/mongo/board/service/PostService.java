@@ -1,9 +1,12 @@
 package spring.mongo.board.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.LookupOperation;
+import org.bson.Document;
+import org.springframework.data.domain.Example;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.schema.MongoJsonSchema;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import spring.mongo.board.dto.PostForm;
@@ -16,8 +19,9 @@ import spring.mongo.board.repository.MemberRepository;
 import spring.mongo.board.repository.PostRepository;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -29,10 +33,6 @@ public class PostService {
     public void save(PostForm form, Member member) {
         Post post = new Post(member, form.getTitle(), form.getContent());
         postRepository.save(post);
-    }
-
-    public List<Post> findAll() {
-        return postRepository.findAllWithoutComment();
     }
 
     public Optional<Post> findById(String postId) {
@@ -117,40 +117,40 @@ public class PostService {
         return 200;
     }
 
-    public List<Post> findAllWithQuery(PostSearchDTO postSearchDTO) {
-        PostSearchDTO.SearchType searchType = postSearchDTO.getSearchTypeEnum();
-        if (searchType == null) {
-            return findAll();
-        }
-
+    public List<Post> findAllWithQuery(PostSearchDTO postSearchDTO, long postPerPage) {
+        PostSearchDTO.SearchType searchType = postSearchDTO.getSearchType();
+        Criteria criteria = new Criteria();
         Aggregation aggregation;
-        switch (searchType) {
-            case TITLE_ONLY:
-                aggregation = Aggregation.newAggregation(
-                        Aggregation.match(Criteria.where("title").regex(postSearchDTO.getQuery()))
-                );
-                break;
-            case TITLE_OR_CONTENT:
-                aggregation = Aggregation.newAggregation(
-                        Aggregation.match(Criteria.where("title").regex(postSearchDTO.getQuery()).orOperator(Criteria.where("content").regex("title")))
-                );
-                break;
-            case AUTHOR:
-                aggregation = Aggregation.newAggregation(
-                        LookupOperation.newLookup()
-                            .from("members")
-                            .localField("writer.$id")
-                            .foreignField("_id")
-                            .as("writer"),
-                        Aggregation.match(Criteria.where("writer.0.nickname").is(postSearchDTO.getQuery()))
-                );
-                break;
-            default:
-                return null;
+
+        if (searchType != null) {
+            Criteria expr = Criteria.expr(() -> new Document("$gt", List.of("$_id", new Document("$toObjectId", postSearchDTO.getBasePostId()))));
+            switch (searchType) {
+                case TITLE_OR_CONTENT, TITLE_ONLY -> {
+                    criteria = criteria.andOperator(expr);
+                    Criteria titleCriteria = Criteria.expr(()->new Document("$regexMatch", new Document(Map.of("input", "$title", "regex", postSearchDTO.getQuery(), "options", "i"))));
+                    Criteria contentCriteria = Criteria.expr(()->new Document("$regexMatch", new Document(Map.of("input", "$content", "regex", postSearchDTO.getQuery(), "options", "i"))));
+
+                    criteria = searchType.equals(PostSearchDTO.SearchType.TITLE_ONLY) ? criteria.orOperator(titleCriteria) : criteria.orOperator(titleCriteria, contentCriteria);
+                    aggregation = Aggregation.newAggregation(Aggregation.match(criteria));
+                }
+                case AUTHOR -> aggregation = Aggregation.newAggregation(LookupOperation.newLookup()
+                                .from("members")
+                                .localField("writer.$id")
+                                .foreignField("_id")
+                                .as("writer"),
+                        Aggregation.match(criteria.andOperator(expr, Criteria.where("writer.0.nickname").is(postSearchDTO.getQuery()))));
+                default -> {
+                    return null;
+                }
+            }
+        } else {
+            aggregation = Aggregation.newAggregation(Aggregation.match(l->null));
         }
 
-        // 댓글은 조회에서 제외
-        aggregation.getPipeline().add(Aggregation.project().andExclude("comments"));
+        // 페이징 && 댓글은 조회에서 제외
+        aggregation.getPipeline()
+            .add(Aggregation.limit(postPerPage))
+            .add(Aggregation.project().andExclude("comments"));
         return postRepository.findAllWithoutComment(aggregation);
     }
 }

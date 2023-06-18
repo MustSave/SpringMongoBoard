@@ -1,8 +1,10 @@
 package spring.mongo.board.repository;
 
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
@@ -51,9 +53,11 @@ public class PostRepository {
                 Aggregation.project().andExclude("comments")
         );
 
-        return mongoTemplate
+        List<Post> posts = mongoTemplate
                 .aggregate(aggregation, mongoTemplate.getCollectionName(Post.class), Post.class)
                 .getMappedResults();
+
+        return posts;
     }
 
     public List<Post> findAllWithoutComment(Aggregation aggregation) {
