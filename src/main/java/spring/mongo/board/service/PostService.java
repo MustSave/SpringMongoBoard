@@ -3,6 +3,7 @@ package spring.mongo.board.service;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -149,6 +150,7 @@ public class PostService {
 
         // 페이징 && 댓글은 조회에서 제외
         aggregation.getPipeline()
+            .add(Aggregation.sort(Sort.Direction.DESC, "_id"))
             .add(Aggregation.limit(postPerPage))
             .add(Aggregation.project().andExclude("comments"));
         return postRepository.findAllWithoutComment(aggregation);
