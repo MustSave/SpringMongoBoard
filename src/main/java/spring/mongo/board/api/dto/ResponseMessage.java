@@ -1,4 +1,4 @@
-package spring.mongo.board.dto;
+package spring.mongo.board.api.dto;
 
 public class ResponseMessage {
     private String message;

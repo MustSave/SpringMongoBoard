@@ -1,23 +1,21 @@
-package spring.mongo.board.controller;
+package spring.mongo.board.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import spring.mongo.board.dto.PostForm;
-import spring.mongo.board.dto.PostSearchDTO;
-import spring.mongo.board.dto.ResponseMessage;
+import spring.mongo.board.api.dto.PostForm;
+import spring.mongo.board.api.dto.PostSearchDTO;
+import spring.mongo.board.api.dto.ResponseMessage;
 import spring.mongo.board.entity.Member;
 import spring.mongo.board.entity.Post;
-import spring.mongo.board.service.PostService;
+import spring.mongo.board.api.service.PostService;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Controller
@@ -36,7 +34,14 @@ public class PostController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(e.getMessage()));
         }
-        return ResponseEntity.status(200).body(postService.findAllWithQuery(postSearchDTO, 10l));
+
+        return ResponseEntity
+                .status(200)
+                .body(
+                        postSearchDTO.getPagingType() != null ?
+                                postService.findAllWithQueryUsingPostId(postSearchDTO, 10)
+                                : postService.findAllWithQueryUsingPageNumber(postSearchDTO, 10)
+                );
     }
 
     @PostMapping("/posts")

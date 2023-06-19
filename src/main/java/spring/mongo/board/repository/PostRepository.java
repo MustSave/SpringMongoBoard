@@ -48,22 +48,8 @@ public class PostRepository {
         return Optional.ofNullable(post);
     }
 
-    public List<Post> findAllWithoutComment() {
-        Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.project().andExclude("comments")
-        );
-
-        List<Post> posts = mongoTemplate
-                .aggregate(aggregation, mongoTemplate.getCollectionName(Post.class), Post.class)
-                .getMappedResults();
-
-        return posts;
-    }
-
     public List<Post> findAllWithoutComment(Aggregation aggregation) {
-        List<Post> queryResults = mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(Post.class), Post.class)
+        return mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(Post.class), Post.class)
                 .getMappedResults();
-
-        return queryResults;
     }
 }

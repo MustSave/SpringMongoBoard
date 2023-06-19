@@ -1,4 +1,4 @@
-package spring.mongo.board.controller;
+package spring.mongo.board.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -7,9 +7,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import spring.mongo.board.dto.SignupForm;
+import spring.mongo.board.api.dto.SignupForm;
 import spring.mongo.board.entity.Member;
-import spring.mongo.board.service.MemberService;
+import spring.mongo.board.api.service.MemberService;
 
 @Controller
 @RequiredArgsConstructor

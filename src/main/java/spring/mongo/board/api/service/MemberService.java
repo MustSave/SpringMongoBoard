@@ -1,4 +1,4 @@
-package spring.mongo.board.service;
+package spring.mongo.board.api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;

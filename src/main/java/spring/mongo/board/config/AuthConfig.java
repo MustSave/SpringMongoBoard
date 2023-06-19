@@ -5,16 +5,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import spring.mongo.board.dto.ResponseMessage;
 import spring.mongo.board.entity.Member;
-import spring.mongo.board.entity.Session;
 import spring.mongo.board.repository.SessionRepository;
 
-import java.util.Arrays;
 import java.util.Optional;
 
 @Configuration

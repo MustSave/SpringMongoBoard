@@ -1,11 +1,11 @@
-package spring.mongo.board.service;
+package spring.mongo.board.api.service;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import spring.mongo.board.dto.LoginForm;
+import spring.mongo.board.api.dto.LoginForm;
 import spring.mongo.board.entity.Member;
 import spring.mongo.board.entity.Session;
 import spring.mongo.board.repository.MemberRepository;

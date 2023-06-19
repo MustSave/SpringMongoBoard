@@ -1,4 +1,4 @@
-package spring.mongo.board.controller;
+package spring.mongo.board.api.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import spring.mongo.board.dto.LoginForm;
-import spring.mongo.board.dto.ResponseMessage;
-import spring.mongo.board.service.AuthService;
+import spring.mongo.board.api.dto.LoginForm;
+import spring.mongo.board.api.dto.ResponseMessage;
+import spring.mongo.board.api.service.AuthService;
 
 @Controller
 @RequiredArgsConstructor

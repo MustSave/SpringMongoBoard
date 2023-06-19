@@ -1,17 +1,15 @@
-package spring.mongo.board.service;
+package spring.mongo.board.api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.schema.MongoJsonSchema;
+import org.springframework.data.mongodb.core.schema.JsonSchemaObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import spring.mongo.board.dto.PostForm;
-import spring.mongo.board.dto.PostSearchDTO;
+import spring.mongo.board.api.dto.PostForm;
+import spring.mongo.board.api.dto.PostSearchDTO;
 import spring.mongo.board.entity.Comment;
 import spring.mongo.board.entity.CommentRepository;
 import spring.mongo.board.entity.Member;
@@ -22,7 +20,6 @@ import spring.mongo.board.repository.PostRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -118,34 +115,34 @@ public class PostService {
         return 200;
     }
 
-    public List<Post> findAllWithQuery(PostSearchDTO postSearchDTO, long postPerPage) {
+    public List<Post> findAllWithQueryUsingPostId(PostSearchDTO postSearchDTO, int postPerPage) {
         PostSearchDTO.SearchType searchType = postSearchDTO.getSearchType();
         Criteria criteria = new Criteria();
         Aggregation aggregation;
 
+        Criteria expr = Criteria.expr(() ->
+                new Document(
+                        postSearchDTO.getPagingType() == PostSearchDTO.PagingType.NEXT ? "$gt" : "$lt",
+                        List.of("$_id", new Document(
+                                "$toObjectId",
+                                postSearchDTO.getBasePostId()
+                        ))
+                )
+        );
+
+        String idCriteria = "{$%s:['$_id', {'$toObjectId': %s}]}".formatted(postSearchDTO.getPagingType() == PostSearchDTO.PagingType.PREV ? "lt" : "gt", postSearchDTO.getBasePostId());
+        expr = Criteria.expr(()->Document.parse(idCriteria));
         if (searchType != null) {
-            Criteria expr = Criteria.expr(() -> new Document("$gt", List.of("$_id", new Document("$toObjectId", postSearchDTO.getBasePostId()))));
             switch (searchType) {
                 case TITLE_OR_CONTENT, TITLE_ONLY -> {
                     criteria = criteria.andOperator(expr);
-                    Criteria titleCriteria = Criteria.expr(()->new Document("$regexMatch", new Document(Map.of("input", "$title", "regex", postSearchDTO.getQuery(), "options", "i"))));
-                    Criteria contentCriteria = Criteria.expr(()->new Document("$regexMatch", new Document(Map.of("input", "$content", "regex", postSearchDTO.getQuery(), "options", "i"))));
-
-                    criteria = searchType.equals(PostSearchDTO.SearchType.TITLE_ONLY) ? criteria.orOperator(titleCriteria) : criteria.orOperator(titleCriteria, contentCriteria);
-                    aggregation = Aggregation.newAggregation(Aggregation.match(criteria));
+                    aggregation = buildAggregation(postSearchDTO, criteria, searchType);
                 }
-                case AUTHOR -> aggregation = Aggregation.newAggregation(LookupOperation.newLookup()
-                                .from("members")
-                                .localField("writer.$id")
-                                .foreignField("_id")
-                                .as("writer"),
-                        Aggregation.match(criteria.andOperator(expr, Criteria.where("writer.0.nickname").is(postSearchDTO.getQuery()))));
-                default -> {
-                    return null;
-                }
+                case AUTHOR -> aggregation = buildAggregation(postSearchDTO);
+                default -> { return null; }
             }
         } else {
-            aggregation = Aggregation.newAggregation(Aggregation.match(l->null));
+            aggregation = Aggregation.newAggregation(Aggregation.match(expr));
         }
 
         // 페이징 && 댓글은 조회에서 제외
@@ -154,5 +151,45 @@ public class PostService {
             .add(Aggregation.limit(postPerPage))
             .add(Aggregation.project().andExclude("comments"));
         return postRepository.findAllWithoutComment(aggregation);
+    }
+
+    public List<Post> findAllWithQueryUsingPageNumber(PostSearchDTO postSearchDTO, int postPerPage) {
+        PostSearchDTO.SearchType searchType = postSearchDTO.getSearchType();
+        Criteria criteria = new Criteria();
+        Aggregation aggregation;
+
+        if (searchType != null) {
+            switch (searchType) {
+                case TITLE_OR_CONTENT, TITLE_ONLY -> aggregation = buildAggregation(postSearchDTO, criteria, searchType);
+                case AUTHOR -> aggregation = buildAggregation(postSearchDTO);
+                default -> { return null; }
+            }
+        } else {
+            aggregation = Aggregation.newAggregation(Aggregation.match(l->null));
+        }
+
+        aggregation.getPipeline()
+            .add(Aggregation.sort(Sort.Direction.DESC, "_id"))
+            .add(Aggregation.skip((postSearchDTO.getPageNumber()-1) * postPerPage))
+            .add(Aggregation.limit(postPerPage))
+            .add(Aggregation.project().andExclude("comments"));
+        return postRepository.findAllWithoutComment(aggregation);
+    }
+
+    private Aggregation buildAggregation(PostSearchDTO postSearchDTO) {
+        return Aggregation.newAggregation(LookupOperation.newLookup()
+                        .from("members")
+                        .localField("writer.$id")
+                        .foreignField("_id")
+                        .as("writer"),
+                Aggregation.match(Criteria.where("writer.0.nickname").is(postSearchDTO.getQuery())));
+    }
+
+    private Aggregation buildAggregation(PostSearchDTO postSearchDTO, Criteria criteria, PostSearchDTO.SearchType searchType) {
+        Criteria titleCriteria = Criteria.expr(() -> new Document("$regexMatch", new Document(Map.of("input", "$title", "regex", postSearchDTO.getQuery(), "options", "i"))));
+        Criteria contentCriteria = Criteria.expr(() -> new Document("$regexMatch", new Document(Map.of("input", "$content", "regex", postSearchDTO.getQuery(), "options", "i"))));
+
+        criteria = searchType.equals(PostSearchDTO.SearchType.TITLE_ONLY) ? criteria.orOperator(titleCriteria) : criteria.orOperator(titleCriteria, contentCriteria);
+        return Aggregation.newAggregation(Aggregation.match(criteria));
     }
 }
